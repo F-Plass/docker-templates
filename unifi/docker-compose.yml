@@ -1,0 +1,39 @@
+version: "2.1"
+services:
+  unifi:
+    image: lscr.io/linuxserver/unifi-controller
+    container_name: unifi
+    restart: unless-stopped
+    networks:
+      - proxy
+    environment:
+      - PUID=944
+      - PGID=944
+      - TZ="Europe/Berlin"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /docker-data/unifi:/config
+    ports:
+      - 3478:3478/udp
+      - 10001:10001/udp
+      - 8090:8080
+      
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.unifi-rtr.rule=Host(`unifi.my-domain.de`) || Host(`unifi-v6.my-domain.de`)"
+      - "traefik.http.routers.unifi-rtr.entryPoints=websecure"
+      - "traefik.http.routers.unifi-rtr.tls=true"
+      - "traefik.http.routers.unifi-rtr.tls.certresolver=servercow"
+      - "traefik.http.routers.unifi-rtr.tls.domains[0].main=unifi.my-domain.de"
+      - "traefik.http.routers.unifi-rtr.tls.domains[0].sans=unifi-v6.my-domain.de"
+      - "traefik.http.routers.unifi-rtr.service=unifi-sevi"
+      - "traefik.http.services.unifi-sevi.loadbalancer.server.port=8443"
+      - "traefik.http.services.unifi-sevi.loadbalancer.server.scheme=https"
+      - "traefik.http.services.unifi-sevi.loadbalancer.serversTransport=unifi-trans"
+      - "traefik.http.serversTransports.unifi-trans.insecureSkipVerify=true"
+      
+      - "traefik.docker.network=proxy"
+
+networks:
+  proxy:
+    external: true

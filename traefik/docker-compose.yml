@@ -1,0 +1,47 @@
+version: '3'
+
+secrets:
+  servercow_username:
+    file: "./secrets/servercow_username.secret"
+  servercow_password:
+    file: "./secrets/servercow_password.secret"
+
+services:
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy
+    ports:
+      - 80:80
+      - 443:443
+    secrets:
+      - "servercow_username"
+      - "servercow_password"
+    environment:
+      - "SERVERCOW_USERNAME_FILE=/run/secrets/servercow_username"
+      - "SERVERCOW_PASSWORD_FILE=/run/secrets/servercow_password"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /docker-data/traefik/data/traefik.yml:/traefik.yml:ro
+      - /docker-data/traefik/data/acme.json:/acme.json
+      - /docker-data/traefik/data/ca.crt:/ca.crt
+      - /docker-data/traefik/config.yml:/config.yml:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=user:PasswordasMD5"
+      - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.routers.traefik-secure.entrypoints=websecure"
+      - "traefik.http.routers.traefik-secure.rule=Host(`traefik-dashboard.my-domain.de`)"
+      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
+      - "traefik.http.routers.traefik-secure.tls=true"
+      - "traefik.http.routers.traefik-secure.tls.certresolver=servercow"
+      - "traefik.http.routers.traefik-secure.service=api@internal"
+
+networks:
+  proxy:
+    external: true

@@ -1,0 +1,35 @@
+api:
+  dashboard: true
+  debug: true
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entrypoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: ":443"
+    #  edomiws:
+    #    address: ":8080"
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+  file:
+    filename: /config.yml
+    watch: true
+certificatesResolvers:
+  servercow:
+    acme:
+      email: certificates@my-domain.de
+      storage: acme.json
+      dnsChallenge:
+        provider: servercow
+        resolvers:
+          - "9.9.9.9:53"
+          - "149.112.112.112:53"
+log:
+    #  format: json
+    #  level: DEBUG
