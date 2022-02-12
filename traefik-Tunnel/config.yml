@@ -1,0 +1,98 @@
+http:
+ #region routers
+  routers:
+    edomi:
+      entryPoints:
+        - "websecure"
+      rule: "Host(`edomi.my-domain.de`)"
+      middlewares:
+        - default-headers
+        - edomi-passtlsclientcert
+      tls:
+        certResolver: servercow
+      service: edomi
+    alexa:
+      entryPoints:
+        - "websecure"
+      rule: "Host(`alexa.my-domain.de`)"
+      middlewares:
+        - default-headers
+      tls:
+        certResolver: servercow
+      service: alexa
+    unifi:
+      entryPoints:
+        - "websecure"
+      rule: "Host(`unifi.my-domain.de`)"
+      middlewares:
+        - default-headers
+      tls:
+        certResolver: servercow
+      service: unifi
+#endregion
+#
+#region services
+  services:
+    edomi:
+      loadBalancer:
+        servers:
+          - url: "https://edomi-v6.my-domain.de"
+        passHostHeader: true
+    alexa:
+      loadBalancer:
+        servers:
+          - url: "https://alexa-v6.my-domain.de"
+        passHostHeader: true
+    unifi:
+      loadBalancer:
+        servers:
+          - url: "https://unifi-v6.my-domain.de"
+        passHostHeader: true
+
+#endregion
+  middlewares:
+    default-headers:
+      headers:
+        frameDeny: true
+        sslRedirect: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        stsPreload: true
+        stsSeconds: 15552000
+        customFrameOptionsValue: SAMEORIGIN
+        customRequestHeaders:
+          X-Forwarded-Proto: https,wss
+    edomi-passtlsclientcert:
+      passTLSClientCert:
+        info:
+          notAfter: true
+          notBefore: true
+          sans: true
+          subject:
+            country: true
+            province: true
+            locality: true
+            commonName: true
+            serialNumber: true
+            domainComponent: true
+          issuer:
+            country: true
+            province: true
+            locality: true
+            organization: true
+            commonName: true
+            serialNumber: true
+            domainComponent: true
+
+tls:
+  options:
+    default:
+      minVersion: VersionTLS12
+      cipherSuites:
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256
+        - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+        - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+
